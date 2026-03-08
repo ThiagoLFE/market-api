@@ -1,63 +1,69 @@
 from fastapi import FastAPI, HTTPException
-from app.schemas.Product import Product, ProductRequest
+from contextlib import asynccontextmanager
+from app.schemas.Product import ProductRequest
+from app.models.product import ProductResponse
+from app.database import create_tables
+from app.services.product_service import register_product, get_list_products, get_product_service, exclude_product, edit_product
+from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI()
 
-# My database so for
-products: list[Product] = []
-NEXT_ID: int = 1
+# CORS TODO: need to edit origens before up to production
+app.add_middleware(
+        CORSMiddleware,
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"],
+        allow_origin_regex=".*", # anyone can send things
+    )
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    create_tables()
+    yield
+    
 
 @app.get("/")
 async def root():
-    
     return {"message": "Market API running"}
 
+
 @app.post("/products")
-def new_product(product_request: ProductRequest):
-    global NEXT_ID
+def create_product(product_request: ProductRequest):
+    return register_product(product_request)
 
-    product = Product(id=NEXT_ID, name=product_request.name, price=product_request.price, stock=product_request.stock)
-    products.append(product)
-    NEXT_ID += 1
-
-    return product
 
 @app.get("/products")
 def list_products():
-    return products
+    return get_list_products()
+
 
 @app.get("/products/{id}")
-def get_product_by_id(id: int):
+def get_product(id: int):
+    res = get_product_service(id)
 
-    for product in products:
-        if product.id == id:
-            return product
+    if res == None:
+        raise HTTPException(status_code=404, detail="Product not found")
     
-    raise HTTPException(status_code=404, detail="Product not found")
+    return res
+
+
 
 @app.delete("/products/{id}")
-def delete_product_by_id(id: int):
-    global products
-
-    product = next((prod for prod in products if prod.id == id ), None)
+def delete_product(id: int):
+    res = exclude_product(id)
     
-    if product is None:
-        raise HTTPException(status_code=404, detail="Product not found to delete")
+    if res == None:
+        raise HTTPException(status_code=404, detail="product not found to delete")
+    
+    return res
 
-    products.remove(product)
-    return {"message": "Product deleted"}
 
 @app.put("/products/{id}")
 def update_product(new_val: ProductRequest, id: int):
-    global products
-
-    product = next((prod for prod in products if prod.id == id), None)
+    res = edit_product(id, new_val)
     
-    if product is None:
-        raise HTTPException(status_code=404, detail="Product not found to edit")
-
-    products.name = new_val.name
-    products.price = new_val.price
-    products.stock = new_val.stock
-
-    return product 
+    if res == None:
+        raise HTTPException(status_code=404, detail="product not found to update")
+    
+    return res
