@@ -1,5 +1,4 @@
 from fastapi import FastAPI, HTTPException
-from pydantic import BaseModel
 from app.schemas.Product import Product, ProductRequest
 
 app = FastAPI()
@@ -14,9 +13,11 @@ async def root():
     return {"message": "Market API running"}
 
 @app.post("/products")
-def new_product(product: ProductRequest):
+def new_product(product_request: ProductRequest):
     global NEXT_ID
-    products.append(Product(id=NEXT_ID, name=product.name, price=product.price, stock=product.stock))
+
+    product = Product(id=NEXT_ID, name=product_request.name, price=product_request.price, stock=product_request.stock)
+    products.append(product)
     NEXT_ID += 1
 
     return product
@@ -41,7 +42,22 @@ def delete_product_by_id(id: int):
     product = next((prod for prod in products if prod.id == id ), None)
     
     if product is None:
-        raise HTTPException(status_code=404, detail="Product not found")
+        raise HTTPException(status_code=404, detail="Product not found to delete")
 
     products.remove(product)
     return {"message": "Product deleted"}
+
+@app.put("/products/{id}")
+def update_product(new_val: ProductRequest, id: int):
+    global products
+
+    product = next((prod for prod in products if prod.id == id), None)
+    
+    if product is None:
+        raise HTTPException(status_code=404, detail="Product not found to edit")
+
+    products.name = new_val.name
+    products.price = new_val.price
+    products.stock = new_val.stock
+
+    return product 

@@ -1,10 +1,7 @@
+from pydantic import BaseModel, Field
+
 class ProductRequest(BaseModel):
     name: str
-    price: float
-    stock: int
+    price: float = Field(gt=0)
+    stock: int = Field(ge=0)
 
-class Product(BaseModel):
-    id: int
-    name: str
-    price: float
-    stock: int
