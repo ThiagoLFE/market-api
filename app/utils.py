@@ -1,4 +1,4 @@
-from app.schemas.Product import ProductResponse
+from app.schemas import ProductResponse
 
 def map_product(row):
     return ProductResponse(

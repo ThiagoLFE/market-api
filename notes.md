@@ -8,7 +8,6 @@
 - estrutura da tabela do banco
 
 ### services
-
 - lógica de negócio / queries SQL
 
 ### database
@@ -16,7 +15,6 @@
 
 ### main
 - rotas da API
-
 
 
 # Documentação do Banco de Dados – Sistema de Usuários e Compras
