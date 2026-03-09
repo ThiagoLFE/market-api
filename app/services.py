@@ -1,17 +1,15 @@
 from app.database import get_connection
-from app.schemas import ProductRequest
-from app.schemas import ProductResponse
+from app.schemas import ProductRequest, ProductResponse
 from app.utils import map_product
 
 def register_product(request_product: ProductRequest):
-
     db = get_connection()
     cur = db.cursor()
     
     cur.execute("""
-    INSERT INTO product (name, price, stock)
-        VALUES (?, ?, ?)
-    """, (request_product.name, request_product.price, request_product.stock))
+    INSERT INTO product (name, price, stock, image)
+        VALUES (?, ?, ?, ?)
+    """, (request_product.name, request_product.price, request_product.stock, request_product.image))
     
     db.commit()
     
@@ -19,8 +17,8 @@ def register_product(request_product: ProductRequest):
 
     db.close()
 
-    row = (product_id, request_product.name, request_product.price, request_product.stock)
-    return map_product(row)
+    row = (product_id, request_product.name, request_product.price, request_product.stock, request_product.image)
+    return ProductResponse(**map_product(row))
 
 
 def get_product_service(id: int):
@@ -39,7 +37,7 @@ def get_product_service(id: int):
     if product is None:
         return None
 
-    return map_product(product)
+    return ProductResponse(**map_product(product))
 
 
 def get_list_products():
@@ -49,7 +47,7 @@ def get_list_products():
 
     rows = cur.execute("SELECT * FROM product").fetchall()
 
-    products = [ map_product(row) for row in rows ]
+    products = [ ProductResponse(**map_product(row)) for row in rows ]
 
     db.close()
 

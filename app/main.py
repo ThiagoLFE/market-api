@@ -5,7 +5,14 @@ from app.database import create_tables
 from app.services import register_product, get_list_products, get_product_service, exclude_product, edit_product
 from fastapi.middleware.cors import CORSMiddleware
 
-app = FastAPI()
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    create_tables()
+    yield
+
+
+app = FastAPI(lifespan=lifespan)
+
 
 # CORS TODO: need to edit origens before up to production
 app.add_middleware(
@@ -15,12 +22,6 @@ app.add_middleware(
         allow_headers=["*"],
         allow_origin_regex=".*", # anyone can send things
     )
-
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-    create_tables()
-    yield
-    
 
 @app.get("/")
 async def root():
