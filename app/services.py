@@ -2,7 +2,7 @@ from app.database import get_connection
 from app.schemas import ProductRequest, ProductResponse, UserRequest, UserResponse, UserLogin
 from app.utils import map_product, map_user
 from app.security import hash_password, verify_password, create_access_token
-
+from app.exceptions import EmailAlreadyExistsError
 class ProductService: 
 
     def register_product(self, request_product: ProductRequest):
@@ -106,10 +106,16 @@ class ProductService:
 
 class UserService:
 
-    def create_user(self, user_request: UserRequest):
+    def register_user(self, user_request: UserRequest):
         db = get_connection()
         cur = db.cursor()
 
+        # Check if exists other user with the same email
+        existing_email = cur.execute("SELECT email FROM users WHERE email = ?", (user_request.email,)).fetchone()
+
+        if existing_email:
+            raise EmailAlreadyExistsError()
+        
         # Convert the password to hash_password argon2
         encript_password = hash_password(user_request.password)
 
@@ -145,3 +151,4 @@ class UserService:
             return token
         
         return None
+    

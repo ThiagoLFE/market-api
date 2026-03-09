@@ -46,10 +46,16 @@ def get_current_user(
         if email is None:
             raise HTTPException(detail="Token modified, don't do it again!", status_code=401)
 
-        return email
+        return payload
 
     except jwt.ExpiredSignatureError:
         raise HTTPException(status_code=401, detail="Expired token")
 
     except jwt.InvalidTokenError:
         raise HTTPException(status_code=401, detail="Invalid token")
+
+
+async def get_current_admin(current_user = Depends(get_current_user)):
+    if not current_user.is_admin:
+        raise HTTPException(status_code=403, detail="Admin privileges required")
+    return current_user

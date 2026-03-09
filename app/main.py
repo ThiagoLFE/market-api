@@ -1,11 +1,13 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request
+from fastapi.responses import JSONResponse
 from contextlib import asynccontextmanager
 from app.schemas import ProductRequest, UserRequest, UserLogin, UserResponse, ProductResponse
 from app.database import create_tables
 from app.services import ProductService, UserService
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi import Depends
-from app.security import get_current_user
+from app.security import get_current_user, get_current_admin
+from app.exceptions import EmailAlreadyExistsError
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -14,6 +16,11 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(lifespan=lifespan)
+
+
+@app.exception_handler(EmailAlreadyExistsError)
+def email_already_exists(request: Request, exc: EmailAlreadyExistsError):
+    return JSONResponse(status_code=409, content={"Error": "Email already exists"})
 
 
 # CORS TODO: need to edit origens before up to production
@@ -25,11 +32,14 @@ app.add_middleware(
         allow_origin_regex=".*", # anyone can send things
     )
 
+
 @app.get("/")
 async def root():
     return {"message": "Market API running"}
 
+# Rotes
 
+# Products
 @app.post("/products", status_code=201, dependencies=[Depends(get_current_user)])
 def create_product(product_request: ProductRequest) -> ProductResponse:
     product_service = ProductService()
@@ -64,7 +74,7 @@ def delete_product(id: int) -> None:
     
 
 
-@app.put("/products/{id}", dependencies=[Depends(get_current_user)])
+@app.put("/products/{id}", dependencies=[Depends(get_current_admin)])
 def update_product(new_val: ProductRequest, id: int) -> ProductResponse:
     product_service = ProductService()
     res = product_service.edit_product(id, new_val)
@@ -75,12 +85,12 @@ def update_product(new_val: ProductRequest, id: int) -> ProductResponse:
     return res
 
 
-# Section User
+# Rotes users
 
 @app.post("/user", status_code=201)
-def create_user(user_request: UserRequest) -> UserResponse:
+def register_user(user_request: UserRequest) -> UserResponse:
     user_service = UserService()
-    return user_service.create_user(user_request)
+    return user_service.register_user(user_request)
 
 
 @app.post("/user/auth")
