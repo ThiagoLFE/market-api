@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, EmailStr
 from datetime import date
 from app.enums import StatusPuchase
 
@@ -17,10 +17,16 @@ class ProductResponse(BaseModel):
 
 
 class UserRequest(BaseModel):
-    name: str
+    name: str = Field(min_length=1, max_length=100)
+    email: EmailStr
+    password: str = Field(min_length=8, max_length=128)
+    is_admin: bool = False
+
+
+class UserLogin(BaseModel):
     email: str
     password: str
-
+    
 
 class UserResponse(BaseModel):
     id: int
