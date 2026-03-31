@@ -74,7 +74,7 @@ def delete_product(id: int) -> None:
     
 
 
-@app.put("/products/{id}", dependencies=[Depends(get_current_admin)])
+@app.put("/products/{id}", dependencies=[Depends(get_current_user)])
 def update_product(new_val: ProductRequest, id: int) -> ProductResponse:
     product_service = ProductService()
     res = product_service.edit_product(id, new_val)
